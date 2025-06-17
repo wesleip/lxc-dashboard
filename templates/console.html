@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Console - {{ container_name }} - LXD Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .terminal-container {
+        height: calc(100vh - 180px);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    #terminal-frame {
+        width: 100%;
+        height: 100%;
+        background-color: #000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Terminal Web - {{ container_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button id="refresh-btn" class="btn btn-sm btn-outline-primary me-2">
+            <i class="bi bi-arrow-repeat"></i> Recarregar
+        </button>
+        <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-lg"></i> Fechar
+        </a>
+    </div>
+</div>
+
+<div class="terminal-container">
+    <iframe id="terminal-frame" src="http://{{ request.host.split(':')[0] }}:{{ port }}/" frameborder="0"></iframe>
+</div>
+
+<script>
+    // Obtém a porta do terminal
+    fetch("{{ url_for('start_terminal', container_name=container_name) }}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.port) {
+                const iframe = document.getElementById('terminal-frame');
+                iframe.src = `http://${window.location.hostname}:${data.port}/`;
+            }
+        });
+    
+    // Atualiza o terminal
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+        const iframe = document.getElementById('terminal-frame');
+        iframe.src = iframe.src;
+    });
+    
+    // Para o terminal quando a página é fechada
+    window.addEventListener('beforeunload', () => {
+        fetch("{{ url_for('stop_terminal', container_name=container_name) }}");
+    });
+</script>
+{% endblock %}

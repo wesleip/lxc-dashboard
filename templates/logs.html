@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - {{ container_name }} - LXD Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Logs do Container: {{ container_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Últimos logs do sistema</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="logs-container p-3">
+            <pre class="mb-0">{{ logs }}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

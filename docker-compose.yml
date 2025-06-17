@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  lxd-manager:
+    build: .
+    container_name: lxd-manager
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - /var/lib/lxd:/var/lib/lxd
+      - /var/snap/lxd/common/lxd:/var/snap/lxd/common/lxd
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+    ports:
+      - "5000:5000"

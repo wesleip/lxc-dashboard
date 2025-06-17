@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - LXD Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Containers</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('create_container') }}" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-circle"></i> Novo Container
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Nome</th>
+                <th>Status</th>
+                <th>Endereço IP</th>
+                <th>CPU</th>
+                <th>Memória</th>
+                <th>Criado em</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for container in containers %}
+            <tr>
+                <td>{{ container.name }}</td>
+                <td>
+                    <span class="badge bg-{% if container.state == 'Running' %}success{% else %}danger{% endif %}">
+                        {{ container.state }}
+                    </span>
+                </td>
+                <td>{{ container.ipv4 }}</td>
+                <td>{{ container.cpu_usage }}</td>
+                <td>{{ container.memory_usage }}</td>
+                <td>{{ container.created_at }}</td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm" role="group">
+                        {% if container.state == 'Running' %}
+                            <a href="/container/stop/{{ container.name }}" class="btn btn-danger" title="Parar">
+                                <i class="bi bi-stop-fill"></i>
+                            </a>
+                            <a href="/container/restart/{{ container.name }}" class="btn btn-warning" title="Reiniciar">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </a>
+                            <a href="{{ url_for('view_logs', container_name=container.name) }}" class="btn btn-info" title="Logs">
+                                <i class="bi bi-journal-text"></i>
+                            </a>
+                            <a href="{{ url_for('view_metrics', container_name=container.name) }}" class="btn btn-primary" title="Métricas">
+                                <i class="bi bi-graph-up"></i>
+                            </a>
+                            <a href="{{ url_for('console', container_name=container.name) }}" class="btn btn-success" title="Console" target="_blank">
+                                <i class="bi bi-terminal"></i>
+                            </a>
+                        {% elif container.state == 'Stopped' %}
+                            <a href="/container/start/{{ container.name }}" class="btn btn-success" title="Iniciar">
+                                <i class="bi bi-play-fill"></i>
+                            </a>
+                        {% endif %}
+                        <a href="/container/delete/{{ container.name }}" class="btn btn-dark" title="Remover" onclick="return confirm('Tem certeza que deseja deletar este container?')">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
