@@ -301,6 +301,168 @@ def stop_terminal(container_name):
         return jsonify(result)
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+@app.route('/images')
+def list_images():
+    try:
+        client = LXDManager.get_client()
+        images = client.images.all()
+        
+        images_info = []
+        for image in images:
+            images_info.append({
+                'fingerprint': image.fingerprint,
+                'filename': image.filename,
+                'size': f"{image.size/1024/1024:.2f} MB",
+                'architecture': image.architecture,
+                'created_at': image.created_at,
+                'uploaded_at': image.uploaded_at,
+                'aliases': [alias['name'] for alias in image.aliases] if image.aliases else []
+            })
+        
+        return render_template('images.html', images=images_info)
+    except LXDAPIException as e:
+        flash(f'Erro ao listar imagens: {str(e)}', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/image/delete/<fingerprint>')
+def delete_image(fingerprint):
+    try:
+        client = LXDManager.get_client()
+        image = client.images.get(fingerprint)
+        image.delete()
+        flash(f'Imagem {fingerprint[:12]}... removida com sucesso', 'success')
+    except LXDAPIException as e:
+        flash(f'Erro ao remover imagem: {str(e)}', 'danger')
+    return redirect(url_for('list_images'))
+
+@app.route('/image/alias/add', methods=['POST'])
+def add_image_alias():
+    try:
+        fingerprint = request.form['fingerprint']
+        alias = request.form['alias']
+        client = LXDManager.get_client()
+        image = client.images.get(fingerprint)
+        image.add_alias(alias, '')
+        flash(f'Alias "{alias}" adicionado à imagem', 'success')
+    except LXDAPIException as e:
+        flash(f'Erro ao adicionar alias: {str(e)}', 'danger')
+    return redirect(url_for('list_images'))
+
+@app.route('/image/alias/remove/<alias>')
+def remove_image_alias(alias):
+    try:
+        client = LXDManager.get_client()
+        client.images.aliases.get(alias).delete()
+        flash(f'Alias "{alias}" removido com sucesso', 'success')
+    except LXDAPIException as e:
+        flash(f'Erro ao remover alias: {str(e)}', 'danger')
+    return redirect(url_for('list_images'))
+
+@app.route('/image/upload', methods=['POST'])
+def upload_image():
+    try:
+        client = LXDManager.get_client()
+        
+        if 'file' not in request.files:
+            flash('Nenhum arquivo enviado', 'danger')
+            return redirect(url_for('list_images'))
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(url_for('list_images'))
+        
+        # Salva temporariamente o arquivo
+        temp_path = os.path.join('/tmp', file.filename)
+        file.save(temp_path)
+        
+        # Cria a imagem
+        alias = request.form.get('alias', '')
+        image = client.images.create_from_file(temp_path, public=False, wait=True)
+        
+        # Adiciona alias se fornecido
+        if alias:
+            image.add_alias(alias, '')
+        
+        # Remove o arquivo temporário
+        os.remove(temp_path)
+        
+        flash(f'Imagem {image.fingerprint[:12]}... adicionada com sucesso', 'success')
+    except Exception as e:
+        flash(f'Erro ao enviar imagem: {str(e)}', 'danger')
+    return redirect(url_for('list_images'))
+
+@app.route('/networks')
+def list_networks():
+    try:
+        client = LXDManager.get_client()
+        networks = client.networks.all()
+        
+        networks_info = []
+        for network in networks:
+            networks_info.append({
+                'name': network.name,
+                'type': network.type,
+                'managed': network.managed,
+                'used_by': len(network.used_by),
+                'config': network.config,
+                'status': network.status
+            })
+        
+        return render_template('networks.html', networks=networks_info)
+    except LXDAPIException as e:
+        flash(f'Erro ao listar redes: {str(e)}', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/network/create', methods=['GET', 'POST'])
+def create_network():
+    if request.method == 'POST':
+        try:
+            client = LXDManager.get_client()
+            config = {
+                'name': request.form['name'],
+                'type': request.form['type'],
+                'config': {
+                    'ipv4.address': request.form.get('ipv4', ''),
+                    'ipv4.nat': 'true' if request.form.get('ipv4_nat') else 'false',
+                    'ipv6.address': request.form.get('ipv6', ''),
+                    'ipv6.nat': 'true' if request.form.get('ipv6_nat') else 'false'
+                }
+            }
+            
+            network = client.networks.create(config)
+            flash(f'Rede {network.name} criada com sucesso', 'success')
+            return redirect(url_for('list_networks'))
+        except LXDAPIException as e:
+            flash(f'Erro ao criar rede: {str(e)}', 'danger')
+    
+    return render_template('create_network.html')
+
+@app.route('/network/delete/<name>')
+def delete_network(name):
+    try:
+        client = LXDManager.get_client()
+        network = client.networks.get(name)
+        network.delete()
+        flash(f'Rede {name} removida com sucesso', 'success')
+    except LXDAPIException as e:
+        flash(f'Erro ao remover rede: {str(e)}', 'danger')
+    return redirect(url_for('list_networks'))
+
+@app.route('/network/<name>')
+def network_details(name):
+    try:
+        client = LXDManager.get_client()
+        network = client.networks.get(name)
+        leases = network.leases()
+        
+        return render_template('network_details.html', 
+                            network=network,
+                            leases=leases)
+    except LXDAPIException as e:
+        flash(f'Erro ao obter detalhes da rede: {str(e)}', 'danger')
+        return redirect(url_for('list_networks'))
 
 # Context processors e inicialização
 @app.context_processor
