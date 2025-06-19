@@ -3,3 +3,4 @@ pylxd
 psutil
 matplotlib
 flask_socketio
+python-dotenv
