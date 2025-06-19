@@ -19,6 +19,15 @@
 </style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    // Função para fechar a aba
+    function closeWindow() {
+        window.close();
+    }
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Terminal Web - {{ container_name }}</h1>
@@ -26,9 +35,9 @@
         <button id="refresh-btn" class="btn btn-sm btn-outline-primary me-2">
             <i class="bi bi-arrow-repeat"></i> Recarregar
         </button>
-        <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-x-lg"></i> Fechar
-        </a>
+        <button onclick="closeWindow()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-lg"></i> Encerrar
+        </button>
     </div>
 </div>
 
