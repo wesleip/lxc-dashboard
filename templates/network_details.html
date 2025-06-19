@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Rede - {{ network.name }} - LXD Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-diagram-3"></i> Detalhes da Rede: {{ network.name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('list_networks') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Configuração</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Nome</dt>
+                    <dd class="col-sm-8">{{ network.name }}</dd>
+
+                    <dt class="col-sm-4">Tipo</dt>
+                    <dd class="col-sm-8">{{ network.type }}</dd>
+
+                    <dt class="col-sm-4">Gerenciada</dt>
+                    <dd class="col-sm-8">
+                        {% if network.managed %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Não</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">{{ network.status }}</dd>
+
+                    <dt class="col-sm-4">IPv4</dt>
+                    <dd class="col-sm-8">
+                        {% if network.config.get('ipv4.address') %}
+                            {{ network.config['ipv4.address'] }}
+                            (NAT: {{ network.config.get('ipv4.nat', 'false') }})
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">IPv6</dt>
+                    <dd class="col-sm-8">
+                        {% if network.config.get('ipv6.address') %}
+                            {{ network.config['ipv6.address'] }}
+                            (NAT: {{ network.config.get('ipv6.nat', 'false') }})
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Dispositivos Conectados ({{ leases|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if leases %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Endereço MAC</th>
+                                <th>Endereço IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lease in leases %}
+                            <tr>
+                                <td>{{ lease['hostname'] }}</td>
+                                <td>{{ lease['type'] }}</td>
+                                <td>{{ lease['hwaddr'] }}</td>
+                                <td>{{ lease['address'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhum dispositivo conectado</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Configurações Avançadas</h5>
+    </div>
+    <div class="card-body">
+        <pre class="bg-light p-3 rounded"><code>{{ network.config|tojson(indent=2) }}</code></pre>
+    </div>
+</div>
+{% endblock %}
